@@ -15,7 +15,7 @@
 int main(int argc, char **argv)
 {
     int rand;
-	Mir m1(argc, argv);
+	Mir m1(argc, argv);//hello*/
     MirRenderer mr1(&m1);
     mr1.main();
     return 0;
