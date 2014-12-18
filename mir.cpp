@@ -8,7 +8,6 @@
 #include <random>
 
 
-
 using namespace lite;
 
 // consts
@@ -25,18 +24,20 @@ int Mir::maxId = 0;
 
 int Org::maxId = 0;
 
-Org::Org()
+Org::Org(Mir* mir)
 {
-	id = maxId++;
+    this->mir = mir;
+	id = to_string (maxId++) + "_" + to_string(mir->age);
 	age = 0;
 	energy = 0;
 }
 
 Org* Org::divide()
 {
-	Org* newbie = new Org;
+	Org* newbie = new Org(mir);
 	newbie->genome = genome;
 	newbie->SNPrate = SNPrate;
+	newbie->ancestry = ancestry;
 	energy /= 2;
 	newbie->energy = energy;
 	// add mutagenes
@@ -282,7 +283,7 @@ void Mir::populateOrgs()
 		int x = rand()%w;
 		int y = rand()%h;
 		if(orgs(x,y) != NULL) continue;
-		Org* newbie = new Org;
+		Org* newbie = new Org(this);
 		newbie->x = x;
 		newbie->y = y;
 		newbie->energy = rand()%(int)initialOrgEnergy;
@@ -520,7 +521,14 @@ void Mir::orgDie()
 void Mir::orgDivide()
 {
 	int count = orgsVector.size();
+	if(count < 1) return;
 	vector< lite::array<int[2]> > places; // free nearby cells
+	// test
+    cout << "my name is " << orgsVector[0]->ancestry.size() << "\n";
+    for (auto i : orgsVector[0]->ancestry) cout << i << '\n';
+
+    // \test
+
 	for(int o = 0; o < orgsVector.size(); o++)
 	{
 		Org* org = orgsVector[o];
@@ -553,15 +561,11 @@ void Mir::orgDivide()
 			{
                 determineEnzyme(newbie->genome[g]);
 			}
+			newbie->ancestry.push_back(org->id);
 			orgs(newbie->x,newbie->y) = newbie;
 			orgsVector.push_back(newbie);
-			int orgNewId = Org::maxId++;
-	     if(divideLogOn) fprintf(divideLog, "%d -> %d;\n%d -> %d;\n", org->id, newbie->id, org->id, orgNewId);
-	     //org->id = orgNewId;
-	     org->age = 0;
-	     //orgsVector[o]->id
-			//fprintf(divideLog, "%d\t%f\t%f\t%d\t%f\n", id, org->meanFit(), newbie->meanFit(), org->age, org->energy);
- 		}
+			//if(divideLogOn) fprintf(divideLog, "%d -> %d;\n%d -> %d;\n", org->id, newbie->id, org->id, orgNewId);
+	    }
 	}
 }
 
@@ -607,7 +611,7 @@ void Mir::saveGenomes()
 	{
 		for(int g = 0; g < orgsVector[o]->genome.size(); g++)
 		{
-			fprintf(fw, ">org%d_gene%d_mirage%d\n", orgsVector[o]->id, g, age);
+			fprintf(fw, ">org%s_gene%d_mirage%d\n", orgsVector[o]->id.c_str() , g, age);
 			fprintf(fw, "%s\n", orgsVector[o]->genome[g].seq.c_str());
 		}
 	}
