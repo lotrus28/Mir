@@ -89,7 +89,7 @@ Mir::Mir(int argc, char **argv)
 	printf("new mir: %d\n", id);
 	// consts
 	age = 0;
-	w = 400; h =400;
+	w = 100; h =100;
 	NSubstances = 2;
 	NSubstanceSources = 10;
 	minSubstance_dE = -5;

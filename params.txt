@@ -1,0 +1,17 @@
+width 150
+sources 4
+geneLength 50
+orgs 2000 
+min_dE -10
+max_dE 10
+startEnergy 70
+energyToDivide 640
+diffusion 0.1
+substanceDegrade 0.999
+expressionCost 0.1
+SNPrate 0.1
+SourceLifetime 25000
+sourceMaxIntensity 10
+maxAge 3000
+sourceRadius 20
+minAgeToDivide 0 
