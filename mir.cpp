@@ -229,6 +229,7 @@ void Mir::main()
 	     echoTimer = 0;
 	 }
 	}
+	saveGenomes();
 }
 
 Org* Mir::org(int x, int y)
@@ -523,11 +524,7 @@ void Mir::orgDivide()
 	int count = orgsVector.size();
 	if(count < 1) return;
 	vector< lite::array<int[2]> > places; // free nearby cells
-	// test
-    cout << "my name is " << orgsVector[0]->ancestry.size() << "\n";
-    for (auto i : orgsVector[0]->ancestry) cout << i << '\n';
-
-    // \test
+	//for (auto i : (*porg)->ancestry) cout << i << '\n';
 
 	for(int o = 0; o < orgsVector.size(); o++)
 	{
@@ -616,6 +613,14 @@ void Mir::saveGenomes()
 		}
 	}
 	fclose(fw);
+
+	sprintf(fname, "MirAge_%d.ancestry", age);
+	fw = fopen(fname, "w");
+    for (auto o : orgsVector){
+        fprintf(fw, "%s", o->id.c_str());
+        for (auto a : o->ancestry) fprintf(fw, " %s", a.c_str());
+        fprintf(fw, "\n");
+    }
 }
 
 bool Mir::badSubstance(int id)
