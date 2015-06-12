@@ -3,12 +3,15 @@
 
 #include <vector>
 #include <string>
+#include <deque>
 #include "litearray.hpp"
 
 using namespace std;
 
 
 //==========================================================
+
+class Mir;
 
 struct Gene
 {
@@ -21,14 +24,14 @@ struct Gene
 class Org
 {
 public:
-	Org();
+	Org(Mir* mir);
 	~Org(){};
 public:
 	Org* divide();
 	float meanFit();
 public:
 	vector<Gene> genome;
-	int id;
+	string id;
 	static int maxId;
 	float energy;
 	int age;
@@ -38,6 +41,9 @@ public:
 	static int maxAge;
 	// Mutagenesis
 	float SNPrate;
+	deque<string> ancestry;
+private:
+    Mir* mir;
 };
 
 //==========================================================
