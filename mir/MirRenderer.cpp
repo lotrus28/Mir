@@ -5,14 +5,16 @@ MirRenderer::MirRenderer(Mir* mir)
 {
 	this->mir = mir;
 	chosen = NULL;
-	w = 1000; h = 1000;
+	w = 800; h = 800;
+	statI = 0;
 	stepX = w/mir->w; stepY = h/mir->h;
 	renderMode = 1;
 	showSubstances = true;
-
 	// stat window
-	windowStat = SDL_CreateWindow("Stat", SDL_WINDOWPOS_UNDEFINED,
-		SDL_WINDOWPOS_UNDEFINED, 400, 400, SDL_WINDOW_SHOWN);
+    contrast = 1; contrastSubstance = 1;
+
+	windowStat = SDL_CreateWindow("Stat", 0,
+		0, 600, 300, SDL_WINDOW_SHOWN|SDL_WINDOW_RESIZABLE);
 	rendererStat  =  SDL_CreateRenderer(windowStat, -1, SDL_RENDERER_ACCELERATED);
 //	SDL_SetRenderDrawColor(rendererStat, 245, 245, 220, 255);
 	SDL_SetRenderDrawColor(rendererStat, 20, 20, 20, 255);
@@ -22,7 +24,7 @@ MirRenderer::MirRenderer(Mir* mir)
 	// mir window
 	window = NULL;
 	window = SDL_CreateWindow("Mir", SDL_WINDOWPOS_UNDEFINED,
-		SDL_WINDOWPOS_UNDEFINED, w, h, SDL_WINDOW_SHOWN);
+		SDL_WINDOWPOS_UNDEFINED, w, h, SDL_WINDOW_SHOWN|SDL_WINDOW_RESIZABLE);
 	renderer = NULL;
 	renderer  =  SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
@@ -55,6 +57,11 @@ void MirRenderer::main()
 		mir->tic();
 		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 		SDL_RenderClear(renderer);
+		SDL_SetRenderDrawColor(rendererStat, 0, 0, 0, 255);
+
+        SDL_GetWindowSize(window, &w, &h);
+		stepX = (float)w/mir->w; stepY = (float)h/mir->h;
+		//SDL_RenderClear(rendererStat);
 		if(renderMode!= 3)
 		{
 			if(showSubstances) drawSubstances();
@@ -87,6 +94,10 @@ void MirRenderer::main()
 				if (e.key.keysym.sym == SDLK_q) {
 					quit = true;
 				}
+				if (e.key.keysym.sym == SDLK_j) contrast += 0.2;
+				if (e.key.keysym.sym == SDLK_k) contrast -= 0.2;
+                if (e.key.keysym.sym == SDLK_h) contrastSubstance += 0.2;
+				if (e.key.keysym.sym == SDLK_l) contrastSubstance -= 0.2;
 			}
 			if(SDL_GetMouseState(&mx, &my)&SDL_BUTTON(1))
 			{
@@ -121,7 +132,7 @@ void MirRenderer::drawSubstances()
 			{
 				float intensity = mir->substances(i,j,s)/Mir::maxSubstance;
 				lite::array<float[3]> scolor = substanceColors[row(s)];
-				color = color + scolor*intensity;
+				color = color + scolor*intensity*contrastSubstance;
 				for(int c = 0; c < 3; c++) if(color(c) > 255) {color(c) = 255;}
 
 			}
@@ -145,9 +156,13 @@ void MirRenderer::drawOrgs()
 		{
 			float fit = org->genome[0].fit;
 			if(renderMode == 2) fit = 1;
-			r = substanceColors(org->genome[0].in,0)*fit;
-			g = substanceColors(org->genome[0].in,1)*fit;
-			b = substanceColors(org->genome[0].in,2)*fit;
+			r = substanceColors(org->genome[0].in,0)*fit*contrast;
+			g = substanceColors(org->genome[0].in,1)*fit*contrast;
+			b = substanceColors(org->genome[0].in,2)*fit*contrast;
+			if(r > 255) r = 255;
+			if(g > 255) g = 255;
+			if(b > 255) b = 255;
+
 		}
 
 
@@ -160,6 +175,45 @@ void MirRenderer::drawOrgs()
 
 void MirRenderer::drawStat()
 {
+    statI++;
+    if(statI%10 != 0) return;
+    SDL_RenderClear(rendererStat);
+
+    fitVector.push_back(mir->meanEnzymeFit());
+
+    int w, h;
+
+    SDL_GetWindowSize(windowStat, &w, &h);
+
+    // decorate
+    int lines = 20;
+    float sty = h/lines;
+
+    Uint32 color = 0xFFFFF0FF;
+    char str[64];
+    float Ky = h;
+
+
+    for(int l = 0; l < h; l += sty)
+    {
+        lineRGBA(rendererStat, 0, l, w, l, 255, 255, 255, 100);
+        sprintf(str,"%.02f", (float)h/(l));
+        stringColor(rendererStat, 10, l, str, color);
+    }
+
+    // line
+    int count = fitVector.size();
+    if(count > 500) fitVector.pop_front();
+    float stepx = (float)w/count;
+
+    if(count < 2) return;
+    for(int i = 0; i < count - 2; i++)
+    {
+        lineRGBA(rendererStat, i*stepx, (1 - fitVector[i])*Ky, (i+1)*stepx, (1 - fitVector[i+1])*Ky, 0, 255, 0, 255);
+
+    }
+
+/*
 	try{
 		if(!chosen) return;
 		if(chosen->energy < mir->expressionCost*3) { chosen = NULL; return; }
@@ -172,7 +226,13 @@ void MirRenderer::drawStat()
 		stringColor(rendererStat, 10, 10, str1, color );
 		stringColor(rendererStat, 10, 30, str2, color );
 	} catch(...) {}
+*/
+
+
+
 }
+
+
 
 //////////////////////////////////////////////////////////////////////////
 
