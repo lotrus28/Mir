@@ -37,7 +37,6 @@ Org* Org::divide()
 	Org* newbie = new Org(mir);
 	newbie->genome = genome;
 	newbie->SNPrate = SNPrate;
-	newbie->ancestry = ancestry;
 	energy /= 2;
 	newbie->energy = energy;
 	// add mutagenes
@@ -524,7 +523,6 @@ void Mir::orgDivide()
 	int count = orgsVector.size();
 	if(count < 1) return;
 	vector< lite::array<int[2]> > places; // free nearby cells
-	//for (auto i : (*porg)->ancestry) cout << i << '\n';
 
 	for(int o = 0; o < orgsVector.size(); o++)
 	{
@@ -558,7 +556,6 @@ void Mir::orgDivide()
 			{
                 determineEnzyme(newbie->genome[g]);
 			}
-			newbie->ancestry.push_back(org->id);
 			orgs(newbie->x,newbie->y) = newbie;
 			orgsVector.push_back(newbie);
 			//if(divideLogOn) fprintf(divideLog, "%d -> %d;\n%d -> %d;\n", org->id, newbie->id, org->id, orgNewId);
@@ -614,13 +611,6 @@ void Mir::saveGenomes()
 	}
 	fclose(fw);
 
-	sprintf(fname, "MirAge_%d.ancestry", age);
-	fw = fopen(fname, "w");
-    for (auto o : orgsVector){
-        fprintf(fw, "%s", o->id.c_str());
-        for (auto a : o->ancestry) fprintf(fw, " %s", a.c_str());
-        fprintf(fw, "\n");
-    }
 }
 
 bool Mir::badSubstance(int id)

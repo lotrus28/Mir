@@ -41,7 +41,6 @@ public:
 	static int maxAge;
 	// Mutagenesis
 	float SNPrate;
-	deque<string> ancestry;
 private:
     Mir* mir;
 };
