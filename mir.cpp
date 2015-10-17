@@ -31,8 +31,9 @@ Org::Org(Mir* mir)
 	age = 0;
 	energy = 0;
 	parent = NULL;
-	alive = true;
+	alive = tru/;
 	name = "";
+	SNPrate = 0;
 }
 
 Org::~Org()
@@ -250,7 +251,7 @@ void Mir::tic()
 {
 	sourcesEmmit();
 	sourceReincarnate();
-	diffuse();
+	//diffuse();
 	orgEat();
 	orgDie();
 	orgDivide();
