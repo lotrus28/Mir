@@ -25,10 +25,13 @@ class Org
 {
 public:
 	Org(Mir* mir);
-	~Org(){};
+	~Org();
 public:
 	Org* divide();
 	float meanFit();
+public:
+	bool anyLivingChild();
+	void maybeDelete();
 public:
 	vector<Gene> genome;
 	string id;
@@ -39,8 +42,10 @@ public:
 	static float maxEAT;
 	static float maxEnergy;
 	static int maxAge;
-	// Mutagenesis
 	float SNPrate;
+	deque<Org*> children;
+	Org* parent;
+	bool alive;
 private:
     Mir* mir;
 };
@@ -133,6 +138,7 @@ public: // Pole
 	vector<Org*> orgsVector;
 	vector<SubstanceSource> sources;
 	vector<int> goodSubstances;
+	Org* adam;
 public: // Energetics
 	int NSubstances;
 	float minSubstance_dE, maxSubstance_dE;
@@ -160,6 +166,8 @@ private: // Logs and files
 	bool divideLogOn;
 	char *paramFile, *popLogFile, *constFile;
 	bool bSaveGenomes;
+public:
+	bool bPhyloLog; 
 };
 
 #endif // MIR_H

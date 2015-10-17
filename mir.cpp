@@ -26,10 +26,25 @@ int Org::maxId = 0;
 
 Org::Org(Mir* mir)
 {
-    this->mir = mir;
+	this->mir = mir;
 	id = to_string (maxId++) + "_" + to_string(mir->age);
 	age = 0;
 	energy = 0;
+	parent = NULL;
+	alive = true;
+}
+
+Org::~Org()
+{
+	if(mir->bPhyloLog && parent != NULL){
+		for(auto c : children){
+			c->parent = parent;
+		}
+		auto me = find(parent->children.begin(), parent->children.end(), this); 
+		if(me != parent->children.end()){
+			parent->children.erase(me);
+		}
+	}	
 }
 
 Org* Org::divide()
@@ -53,6 +68,11 @@ Org* Org::divide()
 		int pos = rand()%newbie->genome[g].seq.size();
 		newbie->genome[g].seq[pos] = Mir::alphabet[rand()%Mir::alphabetLength];
 	}
+	// 
+	if(mir->bPhyloLog){
+		newbie->parent = this;
+		children.push_back(newbie);
+	}
 	return newbie;
 }
 
@@ -63,6 +83,23 @@ float Org::meanFit()
 	return fit/genome.size();
 }
 
+bool Org::anyLivingChild(){
+	for(auto c : children){
+		if(c->anyLivingChild()){
+			return(true);
+		}
+	}
+	return false;
+}
+
+void Org::maybeDelete(){
+	if(!anyLivingChild){
+		parent->maybeDelete();
+		if(alive){ children.clear(); return; }		
+		delete this;
+	}
+}
+
 // :)
 //////////////////////////////////////////////////////////////////////////
 // Mir
@@ -71,9 +108,9 @@ Mir::Mir(int argc, char **argv)
 {
 	id = ++maxId;
 	// files
-	paramFile = "params.txt";
-	constFile = "consts";
-	popLogFile = "populationLog.txt";
+	paramFile = (char *)"params.txt";
+	constFile = (char *)"consts";
+	popLogFile = (char *)"populationLog.txt";
 
 	cout << "argc = " << argc << endl;
 	// seed
@@ -112,7 +149,7 @@ Mir::Mir(int argc, char **argv)
     // not in config yet!
 	minSourceRadius = 1;
 	maxSourceRadius = 40;
-
+	bSaveGenomes = true; // EXPERIMENTAL
     // log
     divideLogOn = false;
 
@@ -125,6 +162,7 @@ Mir::Mir(int argc, char **argv)
 	orgs.resize(w,h);
 	sources.reserve(NSubstanceSources);
 	// populate
+	adam = NULL;
 	printf("Mir constructed\n");
 	// files
 
@@ -201,6 +239,7 @@ void Mir::degrade()
 	nullPole();
 	closeLogFiles();
 	age = 0;
+	delete adam;
 }
 
 void Mir::tic()
@@ -224,7 +263,7 @@ void Mir::main()
 	{
 	 tic();
 	 if(++echoTimer  > 1000) {
-	     printf("mean fit: %f\torgs: %d\tmirAge:%d\n", meanEnzymeFit(), orgsVector.size(), age);
+	     printf("mean fit: %f\torgs: %d\tmirAge:%d\n", meanEnzymeFit(), (int)orgsVector.size(), age);
 	     echoTimer = 0;
 	 }
 	}
@@ -278,6 +317,9 @@ void Mir::populateOrgs()
 	orgs.resize(w,h);
 	orgsVector.clear();
 	orgsVector.reserve(orgStartCount);
+	delete(adam);
+	adam = new Org(this);
+	adam->alive = false;	
 	for(int i = 0; i < orgStartCount; i++)
 	{
 		int x = rand()%w;
@@ -296,8 +338,8 @@ void Mir::populateOrgs()
 			//newbie->genome[g].seq = goldSeqs(0,1);
 			determineEnzyme(newbie->genome[g]);
 		}
-		// mutagenesis rate
 		newbie->SNPrate = initialSNPrate;
+		newbie->parent = adam;
 		orgs(x,y) = newbie;
 		orgsVector.push_back(newbie);
 	}
@@ -510,8 +552,8 @@ void Mir::orgDie()
 			Org* org = orgsVector[o];
 			//fprintf(necroLog, "%d\t%d\t%f\n", id, org->age, org->meanFit());
 			orgs(org->x, org->y) = NULL;
-			delete org;
 			orgsVector.erase(orgsVector.begin() + o);
+			if(mir->bPhyloLog) org->maybeDelete() else delete org;
 		}
 		else o--;
 	}
@@ -656,7 +698,7 @@ void Mir::logPopulation()
 	float medianFit = fits[orgsVector.size()/2];
 
 	meanFit /= orgsVector.size();
-	fprintf(populationLog, "%d\t%d\t%f\t%f\t%f\n", id, orgsVector.size(), meanFit, medianFit, fits[orgsVector.size()-1]);
+	fprintf(populationLog, "%d\t%d\t%f\t%f\t%f\n", id, (int)orgsVector.size(), meanFit, medianFit, fits[orgsVector.size()-1]);
 	fflush(populationLog);
 	if (bSaveGenomes) saveGenomes();
 }

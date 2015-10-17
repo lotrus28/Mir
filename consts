@@ -1,5 +1,5 @@
 MirLifetime 11000
 LogFreq 100000
-saveGenomes 1
+saveGenomes 0
 genes 1
 substances 2
