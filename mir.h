@@ -46,6 +46,7 @@ public:
 	deque<Org*> children;
 	Org* parent;
 	bool alive;
+	string name;
 private:
     Mir* mir;
 };
@@ -102,6 +103,7 @@ public:
 public: // stat
 	float meanEnzymeFit();
 	void saveGenomes();
+	void giveNames(Org* org);
 private:
 	void sourcesEmmit();
 	void diffuse();
