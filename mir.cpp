@@ -7,7 +7,7 @@
 #include <time.h>
 #include <random>
 #include <sstream>
-
+#include <chrono>
 using namespace lite;
 
 // consts
@@ -96,10 +96,11 @@ Org* Org::divide()
 	int sumLength = 0;
 	for(int g = 0; g < newbie->genome.size(); g++) sumLength += newbie->genome[g].seq.size();
 
-	float meanSNPs = sumLength*SNPrate;
-	std::mt19937 generator;
-	std::normal_distribution<double> normal(meanSNPs, meanSNPs);
-	int SNPcount = (int)normal(generator);
+	float meanSNPs = sumLength*newbie->SNPrate;
+	unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+	std::mt19937 generator(seed);
+	std::poisson_distribution<int> distribution(meanSNPs);
+	int SNPcount = distribution(generator);
 	for(int i = 0; i < SNPcount; i++)
 	{
 		int g = rand()%newbie->genome.size();
