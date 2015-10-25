@@ -21,6 +21,23 @@ struct Gene
 	float fit; // how good can do reaction
 };
 
+class Soul
+{
+public:
+	Soul();
+	~Soul() {};
+	string name;
+	bool alive;
+	deque<Soul*> children;
+	Soul* parent;
+public:
+	void die();
+	bool anyLivingChild();
+	void maybeDelete();
+	void deleteAll();
+};
+
+
 class Org
 {
 public:
@@ -43,10 +60,7 @@ public:
 	static float maxEnergy;
 	static int maxAge;
 	float SNPrate;
-	deque<Org*> children;
-	Org* parent;
-	bool alive;
-	string name;
+	Soul* soul;
 private:
     Mir* mir;
 };
@@ -103,7 +117,7 @@ public:
 public: // stat
 	float meanEnzymeFit();
 	void saveGenomes();
-	void giveNames(Org* org);
+	void giveNames(Soul* soul);
 private:
 	void sourcesEmmit();
 	void diffuse();
