@@ -244,6 +244,7 @@ void Mir::loadConfig()
 		if(strcmp(buf, "LogFreq") == 0) LOG_FREQ = (int)f;
 		if(strcmp(buf, "genes") == 0) initialOrgGenes = (int)f;
 		if(strcmp(buf, "saveGenomes") == 0) bSaveGenomes = (bool)f;
+		if(strcmp(buf, "PhyloLog") == 0) bPhyloLog = (bool)f;
 }
 	fclose(sf);
 }
@@ -292,8 +293,8 @@ void Mir::main()
 	if(bPhyloLog){
 		giveNames(adam->soul);
 		saveGenomes();
+		adam->soul->deleteAll();
 	}
-	adam->soul->deleteAll();
 }
 
 Org* Mir::org(int x, int y)

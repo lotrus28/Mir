@@ -3,7 +3,7 @@ sources 4
 geneLength 50
 orgs 1 
 min_dE -2
-max_dE 6
+max_dE 4
 startEnergy 70
 energyToDivide 50
 diffusion 0.1
@@ -13,5 +13,5 @@ SNPrate 0.001
 SourceLifetime 25000
 sourceMaxIntensity 10
 maxAge 300
-sourceRadius 20
+sourceRadius 10
 minAgeToDivide 0 
