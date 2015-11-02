@@ -1,7 +1,7 @@
 width 100
 sources 4
 geneLength 50
-orgs 1 
+orgs 20 
 min_dE -2
 max_dE 4
 startEnergy 70

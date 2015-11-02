@@ -118,6 +118,7 @@ public: // stat
 	float meanEnzymeFit();
 	void saveGenomes();
 	void giveNames(Soul* soul);
+	void calcTaylorMeanVariance(float& mean, float& var);
 private:
 	void sourcesEmmit();
 	void diffuse();

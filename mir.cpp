@@ -704,6 +704,36 @@ void Mir::giveNames(Soul* soul)
 	}
 }
 
+void Mir::calcTaylorMeanVariance(float& mean, float& var)
+{
+	int dx = w/10;
+	int dy = h/10;
+	int x0, y0;
+	const int maxiter = 50;
+	vector<int> n(maxiter);
+	for(int i = 0; i < maxiter; i++)
+	{
+		int count = 0;
+		x0  = rand()%(w - dx);
+		y0 = rand()%(h - dy);
+		for(int x = x0; x < x0+dx; x++)
+			for(int y = y0; y < y0+dy; y++)
+				if(orgs(x,y) != NULL) count++;
+		n[i]=count;
+	}
+	float sum = std::accumulate(std::begin(n), std::end(n), 0.0);
+	float m =  sum / n.size();
+	mean = m;
+	float accum = 0.0;
+	std::for_each (std::begin(n), std::end(n), [&](const float d) {
+	    accum += (d - m) * (d - m);
+	});
+	var = sqrt(accum / (n.size()-1));
+}
+
+/////////////////////////////////////////////////////////////////////
+
+
 bool Mir::badSubstance(int id)
 {
 	// energetically non profit to eat
