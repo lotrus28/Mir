@@ -30,6 +30,5 @@ int main(int argc, char **argv)
 	a->maybeDelete();
 */
 	m1.main();
-	m1.degrade();
  	return 0;
 }

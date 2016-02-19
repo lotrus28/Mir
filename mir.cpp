@@ -89,8 +89,6 @@ Org::~Org()
 Org* Org::divide()
 {
 	Org* newbie = new Org(mir);
-	newbie->parent = this;
-	children.push_back(newbie);
 	newbie->genome = genome;
 	newbie->SNPrate = SNPrate;
 	energy /= 2;

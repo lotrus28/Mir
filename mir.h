@@ -156,6 +156,7 @@ public: // Pole
 	vector<Org*> orgsVector;
 	vector<SubstanceSource> sources;
 	vector<int> goodSubstances; // energy profit
+	Org* adam;
 public: // Energetics
 	int NSubstances;
 	float minSubstance_dE, maxSubstance_dE;
