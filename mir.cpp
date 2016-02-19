@@ -7,7 +7,6 @@
 #include <time.h>
 #include <random>
 
-
 using namespace lite;
 
 // consts
@@ -35,6 +34,8 @@ Org::Org(Mir* mir)
 Org* Org::divide()
 {
 	Org* newbie = new Org(mir);
+	newbie->parent = this;
+	children.push_back(newbie);
 	newbie->genome = genome;
 	newbie->SNPrate = SNPrate;
 	energy /= 2;
@@ -71,9 +72,9 @@ Mir::Mir(int argc, char **argv)
 {
 	id = ++maxId;
 	// files
-	paramFile = "params.txt";
-	constFile = "consts";
-	popLogFile = "populationLog.txt";
+	paramFile = (char *)"params.txt";
+	constFile = (char *)"consts";
+	popLogFile = (char *)"populationLog.txt";
 
 	cout << "argc = " << argc << endl;
 	// seed
@@ -86,7 +87,7 @@ Mir::Mir(int argc, char **argv)
 	cout << "params file: " << paramFile << " const file: " << constFile << " pop out file: " << popLogFile << endl;
 
 	printf("new mir: %d\n", id);
-	// consts
+	//_consts -- mb remove this (file only)?
 	age = 0;
 	w = 100; h =100;
 	NSubstances = 2;
@@ -123,6 +124,7 @@ Mir::Mir(int argc, char **argv)
 	goldSeqs.resize(NSubstances,NSubstances);
 	substances.resize(w,h, NSubstances);
 	orgs.resize(w,h);
+	deadGenomes.resize(w,h);
 	sources.reserve(NSubstanceSources);
 	// populate
 	printf("Mir constructed\n");
@@ -189,10 +191,10 @@ void Mir::loadConfig()
 
 Mir::~Mir()
 {
-	degrade();
+	deinit();
 }
 
-void Mir::degrade()
+void Mir::deinit()
 {
 	for(int i = 0; i < orgsVector.size(); i++)
 		delete orgsVector[i];
@@ -224,7 +226,7 @@ void Mir::main()
 	{
 	 tic();
 	 if(++echoTimer  > 1000) {
-	     printf("mean fit: %f\torgs: %d\tmirAge:%d\n", meanEnzymeFit(), orgsVector.size(), age);
+	     printf("mean fit: %f\torgs: %d\tmirAge:%d\n", meanEnzymeFit(), (int)orgsVector.size(), age);
 	     echoTimer = 0;
 	 }
 	}
@@ -245,7 +247,7 @@ Org* Mir::org(int x, int y)
 
 //////////////////////////////////////////////////////////////////////////////
 
-void Mir::reportDE()
+void Mir::reportDEMatrix()
 {
 	printf("*** dE matrix ***\n");
 	for(int i = 0; i < NSubstances; i++){
@@ -338,7 +340,7 @@ void Mir::populate_dE()
 	dE(i,j) = (rand()%(100*(int)(maxSubstance_dE - minSubstance_dE)))/100.0 + minSubstance_dE;
 	dE(j,i) = -dE(i,j);
 		}
-	reportDE();
+	reportDEMatrix();
 	goodSubstances.clear();
 	for(int i =0 ; i < NSubstances; i++)
 		if(!badSubstance(i)) goodSubstances.push_back(i);
@@ -510,7 +512,8 @@ void Mir::orgDie()
 			Org* org = orgsVector[o];
 			//fprintf(necroLog, "%d\t%d\t%f\n", id, org->age, org->meanFit());
 			orgs(org->x, org->y) = NULL;
-			delete org;
+			deadGenomes(org->x, org->y) = org->genome;
+			delete org;	
 			orgsVector.erase(orgsVector.begin() + o);
 		}
 		else o--;
@@ -656,7 +659,7 @@ void Mir::logPopulation()
 	float medianFit = fits[orgsVector.size()/2];
 
 	meanFit /= orgsVector.size();
-	fprintf(populationLog, "%d\t%d\t%f\t%f\t%f\n", id, orgsVector.size(), meanFit, medianFit, fits[orgsVector.size()-1]);
+	fprintf(populationLog, "%d\t%d\t%f\t%f\t%f\n", id, (int)orgsVector.size(), meanFit, medianFit, fits[orgsVector.size()-1]);
 	fflush(populationLog);
 	if (bSaveGenomes) saveGenomes();
 }

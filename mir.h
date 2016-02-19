@@ -39,8 +39,11 @@ public:
 	static float maxEAT;
 	static float maxEnergy;
 	static int maxAge;
-	// Mutagenesis
+	// Mutagenesis	
 	float SNPrate;
+	// ancestry
+	Org* parent;
+	deque<Org*> children;
 private:
     Mir* mir;
 };
@@ -86,15 +89,14 @@ class Mir
 public:
 	Mir(int argc, char **argv);
 	void init();
+	void deinit();
 	void loadConfig();
 	~Mir();
-	void degrade();
 public:
-	void reportDE();
-	void tic();
 	void main();
-	Org* org(int x, int y);
+	void tic();
 public: // stat
+	Org* org(int x, int y);
 	float meanEnzymeFit();
 	void saveGenomes();
 private:
@@ -119,6 +121,7 @@ private:
 	string randomSeq(int length = 10);
 	void determineEnzyme(Gene& gene);
 	bool badSubstance(int id);
+	void reportDEMatrix();
 // data
 public:
 	static int maxId;
@@ -130,9 +133,10 @@ public:
 public: // Pole
 	lite::array <float[1][1][1]> substances;
 	lite::array <Org*[1][1]> orgs;
+	lite::array <vector<Gene>[1][1]> deadGenomes;
 	vector<Org*> orgsVector;
 	vector<SubstanceSource> sources;
-	vector<int> goodSubstances;
+	vector<int> goodSubstances; // energy profit
 public: // Energetics
 	int NSubstances;
 	float minSubstance_dE, maxSubstance_dE;
