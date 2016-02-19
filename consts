@@ -1,5 +1,11 @@
+<<<<<<< HEAD
 MirLifetime 9991000
 LogFreq 100000
 saveGenomes 1
+=======
+MirLifetime 900000001
+PhyloLog 0 
+saveGenomes 0
+>>>>>>> aa11a5b745a143da7d62a6fd43e508a85ce3c24c
 genes 1
 substances 2

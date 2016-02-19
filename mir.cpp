@@ -6,6 +6,8 @@
 #include <math.h>
 #include <time.h>
 #include <random>
+#include <sstream>
+#include <chrono>
 
 using namespace lite;
 
@@ -19,16 +21,69 @@ const char Mir::alphabet[4] = {'A','T','G','C'};
 int Mir::maxId = 0;
 
 //////////////////////////////////////////////////////////////////////////
+// Soul
+
+Soul::Soul()
+{
+	parent = NULL;
+	alive = true;
+}
+
+void Soul::die()
+{
+	alive = false;
+	maybeDelete(); // will free memory if possible	
+}
+
+bool Soul::anyLivingChild()
+{
+	for(auto c : children)
+	{
+		if(c->alive || c->anyLivingChild())
+		{
+			return(true);
+		}
+	}
+	return false;
+}
+
+void Soul::maybeDelete(){
+	///cout << "maybeDelete\t"<< name<<"\n";
+	if(alive || anyLivingChild() ) return;
+	if(parent != NULL)
+	{
+		auto me = find(parent->children.begin(), parent->children.end(), this); 
+		if(me != parent->children.end())	parent->children.erase(me);
+	}
+	if(parent != NULL) parent->maybeDelete();
+	//cout << name << " making suicide\n";
+	
+	if((int)children.size() > 0)	cout << "NB: deleting with non empty childrens!!!\n"; 
+	delete this;
+}
+
+void Soul::deleteAll()
+{
+	for(auto c : children) c->deleteAll();
+	delete this;
+}
+
 // Org
 
 int Org::maxId = 0;
 
 Org::Org(Mir* mir)
 {
-    this->mir = mir;
-	id = to_string (maxId++) + "_" + to_string(mir->age);
+	this->mir = mir;
+	id = to_string (maxId++) + "_" + to_string(mir->age); // remove?
 	age = 0;
 	energy = 0;
+	SNPrate = 0;
+	if(mir->bPhyloLog) soul = new Soul; // should be deleted outsid (not in destructor
+}
+
+Org::~Org()
+{
 }
 
 Org* Org::divide()
@@ -40,19 +95,25 @@ Org* Org::divide()
 	newbie->SNPrate = SNPrate;
 	energy /= 2;
 	newbie->energy = energy;
-	// add mutagenes
+	// make genome
 	int sumLength = 0;
 	for(int g = 0; g < newbie->genome.size(); g++) sumLength += newbie->genome[g].seq.size();
 
-	float meanSNPs = sumLength*SNPrate;
-	std::mt19937 generator;
-	std::normal_distribution<double> normal(meanSNPs, meanSNPs);
-	int SNPcount = (int)normal(generator);
+	float meanSNPs = sumLength*newbie->SNPrate;
+	unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+	std::mt19937 generator(seed);
+	std::poisson_distribution<int> distribution(meanSNPs);
+	int SNPcount = distribution(generator);
 	for(int i = 0; i < SNPcount; i++)
 	{
 		int g = rand()%newbie->genome.size();
 		int pos = rand()%newbie->genome[g].seq.size();
 		newbie->genome[g].seq[pos] = Mir::alphabet[rand()%Mir::alphabetLength];
+	}
+	// soul things
+	if(mir->bPhyloLog){
+		newbie->soul->parent = this->soul;
+		soul->children.push_back(newbie->soul);
 	}
 	return newbie;
 }
@@ -64,12 +125,14 @@ float Org::meanFit()
 	return fit/genome.size();
 }
 
+
 // :)
 //////////////////////////////////////////////////////////////////////////
 // Mir
 
 Mir::Mir(int argc, char **argv)
 {
+	bPhyloLog = true;
 	id = ++maxId;
 	// files
 	paramFile = (char *)"params.txt";
@@ -113,7 +176,7 @@ Mir::Mir(int argc, char **argv)
     // not in config yet!
 	minSourceRadius = 1;
 	maxSourceRadius = 40;
-
+	bSaveGenomes = true; // EXPERIMENTAL
     // log
     divideLogOn = false;
 
@@ -127,6 +190,7 @@ Mir::Mir(int argc, char **argv)
 	deadGenomes.resize(w,h);
 	sources.reserve(NSubstanceSources);
 	// populate
+	adam = NULL;
 	printf("Mir constructed\n");
 	// files
 
@@ -184,6 +248,7 @@ void Mir::loadConfig()
 		if(strcmp(buf, "LogFreq") == 0) LOG_FREQ = (int)f;
 		if(strcmp(buf, "genes") == 0) initialOrgGenes = (int)f;
 		if(strcmp(buf, "saveGenomes") == 0) bSaveGenomes = (bool)f;
+		if(strcmp(buf, "PhyloLog") == 0) bPhyloLog = (bool)f;
 }
 	fclose(sf);
 }
@@ -203,6 +268,7 @@ void Mir::deinit()
 	nullPole();
 	closeLogFiles();
 	age = 0;
+	delete adam;
 }
 
 void Mir::tic()
@@ -220,7 +286,6 @@ void Mir::tic()
 
 void Mir::main()
 {
-	init();
 	int echoTimer = 0;
 	while(age <= MirLifetime)
 	{
@@ -230,7 +295,11 @@ void Mir::main()
 	     echoTimer = 0;
 	 }
 	}
-	saveGenomes();
+	if(bPhyloLog){
+		giveNames(adam->soul);
+		saveGenomes();
+		adam->soul->deleteAll();
+	}
 }
 
 Org* Mir::org(int x, int y)
@@ -280,6 +349,13 @@ void Mir::populateOrgs()
 	orgs.resize(w,h);
 	orgsVector.clear();
 	orgsVector.reserve(orgStartCount);
+	delete(adam);
+	adam = new Org(this);
+	if(bPhyloLog) 
+	{
+		adam->soul->name = "adam";
+		adam->soul->alive = true; // not to be killed
+	}	
 	for(int i = 0; i < orgStartCount; i++)
 	{
 		int x = rand()%w;
@@ -298,8 +374,12 @@ void Mir::populateOrgs()
 			//newbie->genome[g].seq = goldSeqs(0,1);
 			determineEnzyme(newbie->genome[g]);
 		}
-		// mutagenesis rate
 		newbie->SNPrate = initialSNPrate;
+		if(bPhyloLog) 
+		{
+			newbie->soul->parent = adam->soul;
+			adam->soul->children.push_back(newbie->soul);
+		}
 		orgs(x,y) = newbie;
 		orgsVector.push_back(newbie);
 	}
@@ -479,29 +559,6 @@ void Mir::orgEat()
 	}
 }
 
-//bool energyLow(Org *org)
-//{
-//	if(org->energy > 0) return false;
-//	return true;
-//}
-/*
-void Mir::orgDie()
-{
-	//org->age++;
-
-	vector<Org*>::iterator dead = remove_if(orgsVector.begin(),orgsVector.end(), energyLow);
-	vector<Org*>::iterator d = dead;
-	while(d != orgsVector.end())
-	{
-			orgs((*d)->x, (*d)->y) = NULL;
-			delete *d;
-			d++;
-	}
-	orgsVector.erase(dead, orgsVector.end());
-
-}
-*/
-
 void Mir::orgDie()
 {
 	int o = orgsVector.size() - 1;
@@ -510,11 +567,11 @@ void Mir::orgDie()
 		if(orgsVector[o]->energy <= 0 || orgsVector[o]->age > Org::maxAge)
 		{
 			Org* org = orgsVector[o];
-			//fprintf(necroLog, "%d\t%d\t%f\n", id, org->age, org->meanFit());
 			orgs(org->x, org->y) = NULL;
 			deadGenomes(org->x, org->y) = org->genome;
-			delete org;	
 			orgsVector.erase(orgsVector.begin() + o);
+			if(bPhyloLog) org->soul->die();
+			delete org;
 		}
 		else o--;
 	}
@@ -571,8 +628,9 @@ void Mir::putToWorld(int &x, int &y)
 {
 	if(x >= w) x -= w;
 	if(y >= h) y -= h;
-	if(x < 0) x += w;
+
 	if(y < 0) y += h;
+	if(x < 0) x += w;
 //	if(x >= w) x = w-1;
 //	if(y >= h) y = h-1;
 //	if(x < 0) x = 0;
@@ -608,13 +666,55 @@ void Mir::saveGenomes()
 	{
 		for(int g = 0; g < orgsVector[o]->genome.size(); g++)
 		{
-			fprintf(fw, ">org%s_gene%d_mirage%d\n", orgsVector[o]->id.c_str() , g, age);
+			fprintf(fw, ">%s|gene%d\n", orgsVector[o]->soul->name.c_str() , g);
 			fprintf(fw, "%s\n", orgsVector[o]->genome[g].seq.c_str());
 		}
 	}
 	fclose(fw);
-
 }
+
+
+
+void Mir::giveNames(Soul* soul)
+{
+	for(int i = 0; i < soul->children.size(); i++)
+	{
+		std::stringstream ss;
+		ss << soul->name  << "_" << i;
+		soul->children[i]->name = ss.str();	
+		giveNames(soul->children[i]);
+	}
+}
+
+void Mir::calcTaylorMeanVariance(float& mean, float& var)
+{
+	int dx = w/10;
+	int dy = h/10;
+	int x0, y0;
+	const int maxiter = 50;
+	vector<int> n(maxiter);
+	for(int i = 0; i < maxiter; i++)
+	{
+		int count = 0;
+		x0  = rand()%(w - dx);
+		y0 = rand()%(h - dy);
+		for(int x = x0; x < x0+dx; x++)
+			for(int y = y0; y < y0+dy; y++)
+				if(orgs(x,y) != NULL) count++;
+		n[i]=count;
+	}
+	float sum = std::accumulate(std::begin(n), std::end(n), 0.0);
+	float m =  sum / n.size();
+	mean = m;
+	float accum = 0.0;
+	std::for_each (std::begin(n), std::end(n), [&](const float d) {
+	    accum += (d - m) * (d - m);
+	});
+	var = sqrt(accum / (n.size()-1));
+}
+
+/////////////////////////////////////////////////////////////////////
+
 
 bool Mir::badSubstance(int id)
 {

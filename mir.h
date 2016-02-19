@@ -21,14 +21,34 @@ struct Gene
 	float fit; // how good can do reaction
 };
 
+class Soul
+{
+public:
+	Soul();
+	~Soul() {};
+	string name;
+	bool alive;
+	deque<Soul*> children;
+	Soul* parent;
+public:
+	void die();
+	bool anyLivingChild();
+	void maybeDelete();
+	void deleteAll();
+};
+
+
 class Org
 {
 public:
 	Org(Mir* mir);
-	~Org(){};
+	~Org();
 public:
 	Org* divide();
 	float meanFit();
+public:
+	bool anyLivingChild();
+	void maybeDelete();
 public:
 	vector<Gene> genome;
 	string id;
@@ -39,11 +59,8 @@ public:
 	static float maxEAT;
 	static float maxEnergy;
 	static int maxAge;
-	// Mutagenesis	
 	float SNPrate;
-	// ancestry
-	Org* parent;
-	deque<Org*> children;
+	Soul* soul;
 private:
     Mir* mir;
 };
@@ -99,6 +116,8 @@ public: // stat
 	Org* org(int x, int y);
 	float meanEnzymeFit();
 	void saveGenomes();
+	void giveNames(Soul* soul);
+	void calcTaylorMeanVariance(float& mean, float& var);
 private:
 	void sourcesEmmit();
 	void diffuse();
@@ -164,6 +183,8 @@ private: // Logs and files
 	bool divideLogOn;
 	char *paramFile, *popLogFile, *constFile;
 	bool bSaveGenomes;
+public:
+	bool bPhyloLog; 
 };
 
 #endif // MIR_H
