@@ -5,7 +5,7 @@
 #include <string>
 #include <deque>
 #include "litearray.hpp"
-
+#include "genomeDistanceLoger.h"
 using namespace std;
 
 
