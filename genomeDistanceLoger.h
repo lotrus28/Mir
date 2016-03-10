@@ -9,8 +9,11 @@ class Gene;
 class genomeDistanceLoger
 {
 public:
-	genomeDistanceLoger(Mir* mir) { this->mir = mir; }
-	~genomeDistanceLoger() {} 
+	genomeDistanceLoger(Mir* mir)
+	{
+		this->mir = mir;
+	}
+	~genomeDistanceLoger() {}
 
 private:
 public:

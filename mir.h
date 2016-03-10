@@ -62,7 +62,7 @@ public:
 	float SNPrate;
 	Soul* soul;
 private:
-    Mir* mir;
+	Mir* mir;
 };
 
 //==========================================================
@@ -75,7 +75,10 @@ struct SubstanceSource
 	float intensity;
 	SubstanceSource()
 	{
-		x = 0; y = 0; intensity = 1.0; radius = 0;
+		x = 0;
+		y = 0;
+		intensity = 1.0;
+		radius = 0;
 	}
 };
 
@@ -92,8 +95,8 @@ struct Cell
 	}
 	friend ostream& operator<<(ostream& os, const Cell& cell)
 	{
-	 //os << (cell.orgs.size() > 0? 1 : 0);
-	 return os;
+		//os << (cell.orgs.size() > 0? 1 : 0);
+		return os;
 	}
 
 };
@@ -180,12 +183,11 @@ private: // at the beginning
 	int initialGeneLength;
 	float initialSNPrate;
 private: // Logs and files
-	FILE *necroLog, *divideLog, *populationLog;
-	bool divideLogOn;
+	FILE *populationLog, *geneDistLog;
 	char *paramFile, *popLogFile, *constFile;
 	bool bSaveGenomes;
 public:
-	bool bPhyloLog; 
+	bool bSoulLog;
 };
 
 #endif // MIR_H

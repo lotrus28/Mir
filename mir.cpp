@@ -13,6 +13,7 @@ using namespace lite;
 
 // consts
 int LOG_FREQ = 1000;
+int LOG_GENEDIST_FREQ = 100;
 float Mir::maxSubstance = 1000;
 float Org::maxEAT = 0.6;
 float Org::maxEnergy = 1000;
@@ -32,7 +33,7 @@ Soul::Soul()
 void Soul::die()
 {
 	alive = false;
-	maybeDelete(); // will free memory if possible	
+	maybeDelete(); // will free memory if possible
 }
 
 bool Soul::anyLivingChild()
@@ -47,18 +48,19 @@ bool Soul::anyLivingChild()
 	return false;
 }
 
-void Soul::maybeDelete(){
+void Soul::maybeDelete()
+{
 	///cout << "maybeDelete\t"<< name<<"\n";
 	if(alive || anyLivingChild() ) return;
 	if(parent != NULL)
 	{
-		auto me = find(parent->children.begin(), parent->children.end(), this); 
+		auto me = find(parent->children.begin(), parent->children.end(), this);
 		if(me != parent->children.end())	parent->children.erase(me);
 	}
 	if(parent != NULL) parent->maybeDelete();
 	//cout << name << " making suicide\n";
-	
-	if((int)children.size() > 0)	cout << "NB: deleting with non empty childrens!!!\n"; 
+
+	if((int)children.size() > 0)	cout << "NB: deleting with non empty childrens!!!\n";
 	delete this;
 }
 
@@ -79,7 +81,7 @@ Org::Org(Mir* mir)
 	age = 0;
 	energy = 0;
 	SNPrate = 0;
-	if(mir->bPhyloLog) soul = new Soul; // should be deleted outsid (not in destructor
+	if(mir->bSoulLog) soul = new Soul; // should be deleted outsid (not in destructor
 }
 
 Org::~Org()
@@ -109,7 +111,8 @@ Org* Org::divide()
 		newbie->genome[g].seq[pos] = Mir::alphabet[rand()%Mir::alphabetLength];
 	}
 	// soul things
-	if(mir->bPhyloLog){
+	if(mir->bSoulLog)
+	{
 		newbie->soul->parent = this->soul;
 		soul->children.push_back(newbie->soul);
 	}
@@ -130,7 +133,7 @@ float Org::meanFit()
 
 Mir::Mir(int argc, char **argv)
 {
-	bPhyloLog = true;
+	bSoulLog = true;
 	id = ++maxId;
 	// files
 	paramFile = (char *)"params.txt";
@@ -139,7 +142,8 @@ Mir::Mir(int argc, char **argv)
 
 	cout << "argc = " << argc << endl;
 	// seed
-	if(argc >= 2) randomSeed = atoi(argv[1]); else randomSeed = 1; //time(NULL);
+	if(argc >= 2) randomSeed = atoi(argv[1]);
+	else randomSeed = 1; //time(NULL);
 	srand (randomSeed);
 	// params, logs
 	if(argc >= 3) paramFile = argv[2];
@@ -150,7 +154,8 @@ Mir::Mir(int argc, char **argv)
 	printf("new mir: %d\n", id);
 	//_consts -- mb remove this (file only)?
 	age = 0;
-	w = 100; h =100;
+	w = 100;
+	h =100;
 	NSubstances = 2;
 	NSubstanceSources = 10;
 	minSubstance_dE = -5;
@@ -167,16 +172,14 @@ Mir::Mir(int argc, char **argv)
 	SourceLifetime = 1000;
 	Org::maxAge = 3000; // -1 - no max age
 	MirLifetime = 100000000;
-    sourceMaxIntensity = 100;
-    bSaveGenomes = false;
-    minAgeToDivide = 100;
+	sourceMaxIntensity = 100;
+	bSaveGenomes = false;
+	minAgeToDivide = 100;
 
-    // not in config yet!
+	// not in config yet!
 	minSourceRadius = 1;
 	maxSourceRadius = 40;
 	bSaveGenomes = true; // EXPERIMENTAL
-    // log
-    divideLogOn = false;
 
 	// LOAD params
 	loadConfig();
@@ -190,8 +193,6 @@ Mir::Mir(int argc, char **argv)
 	// populate
 	adam = NULL;
 	printf("Mir constructed\n");
-	// files
-
 }
 
 void Mir::init()
@@ -208,11 +209,20 @@ void Mir::loadConfig()
 {
 	FILE *sf;
 	sf = fopen(paramFile, "r");
-	if(!sf) { cout << "no config file - working on defaults.\n"; return; }
-	char buf[1024]; float f;
+	if(!sf)
+	{
+		cout << "no config file - working on defaults.\n";
+		return;
+	}
+	char buf[1024];
+	float f;
 	while(fscanf(sf, "%s %f", buf, &f) == 2)
 	{
-		if(strcmp(buf, "width") == 0) { w = (int)f; h = w; }
+		if(strcmp(buf, "width") == 0)
+		{
+			w = (int)f;
+			h = w;
+		}
 		//if(strcmp(buf, "height") == 0) h = (int)f;
 		if(strcmp(buf, "substances") == 0) NSubstances = (int)f;
 		if(strcmp(buf, "sources") == 0) NSubstanceSources = (int)f;
@@ -229,16 +239,24 @@ void Mir::loadConfig()
 
 		if(strcmp(buf, "expressionCost") == 0) expressionCost = f;
 		if(strcmp(buf, "SNPrate") == 0) initialSNPrate = f;
-		if(strcmp(buf, "sourceRadius") == 0) { minSourceRadius = (int)f; maxSourceRadius = minSourceRadius; }
-        if(strcmp(buf, "sourceMaxIntensity") == 0) sourceMaxIntensity = f;
+		if(strcmp(buf, "sourceRadius") == 0)
+		{
+			minSourceRadius = (int)f;
+			maxSourceRadius = minSourceRadius;
+		}
+		if(strcmp(buf, "sourceMaxIntensity") == 0) sourceMaxIntensity = f;
 
 
-	 if(strcmp(buf, "maxAge") == 0) Org::maxAge = (int)f;
-	 if(strcmp(buf, "SourceLifetime") == 0) SourceLifetime = (int)f;
+		if(strcmp(buf, "maxAge") == 0) Org::maxAge = (int)f;
+		if(strcmp(buf, "SourceLifetime") == 0) SourceLifetime = (int)f;
 	}
 	fclose(sf);
 	sf = fopen(constFile, "r");
-	if(!sf) { cout << "no consts file - working on defaults.\n"; return; }
+	if(!sf)
+	{
+		cout << "no consts file - working on defaults.\n";
+		return;
+	}
 	while(fscanf(sf, "%s %f", buf, &f) == 2)
 	{
 		if(strcmp(buf, "MirLifetime") == 0) MirLifetime = (int)f;
@@ -246,8 +264,8 @@ void Mir::loadConfig()
 		if(strcmp(buf, "LogFreq") == 0) LOG_FREQ = (int)f;
 		if(strcmp(buf, "genes") == 0) initialOrgGenes = (int)f;
 		if(strcmp(buf, "saveGenomes") == 0) bSaveGenomes = (bool)f;
-		if(strcmp(buf, "PhyloLog") == 0) bPhyloLog = (bool)f;
-}
+		if(strcmp(buf, "PhyloLog") == 0) bSoulLog = (bool)f;
+	}
 	fclose(sf);
 }
 
@@ -277,7 +295,11 @@ void Mir::tic()
 	orgEat();
 	orgDie();
 	orgDivide();
-	if(orgsVector.size() == 0) { id++; populateOrgs(); }
+	if(orgsVector.size() == 0)
+	{
+		id++;
+		populateOrgs();
+	}
 	logPopulation();
 	age++;
 }
@@ -287,13 +309,15 @@ void Mir::main()
 	int echoTimer = 0;
 	while(age <= MirLifetime)
 	{
-	 tic();
-	 if(++echoTimer  > 1000) {
-	     printf("mean fit: %f\torgs: %d\tmirAge:%d\n", meanEnzymeFit(), (int)orgsVector.size(), age);
-	     echoTimer = 0;
-	 }
+		tic();
+		if(++echoTimer  > 1000)
+		{
+			printf("mean fit: %f\torgs: %d\tmirAge:%d\n", meanEnzymeFit(), (int)orgsVector.size(), age);
+			echoTimer = 0;
+		}
 	}
-	if(bPhyloLog){
+	if(bSoulLog)
+	{
 		giveNames(adam->soul);
 		saveGenomes();
 		adam->soul->deleteAll();
@@ -317,8 +341,10 @@ Org* Mir::org(int x, int y)
 void Mir::reportDEMatrix()
 {
 	printf("*** dE matrix ***\n");
-	for(int i = 0; i < NSubstances; i++){
-		for(int j = 0; j < NSubstances; j++){
+	for(int i = 0; i < NSubstances; i++)
+	{
+		for(int j = 0; j < NSubstances; j++)
+		{
 			printf("%f\t", dE(i,j));
 		}
 		printf("\n");
@@ -337,7 +363,7 @@ void Mir::nullPole()
 	for(int i = 0; i < w; i++)
 		for(int j = 0; j < h; j++)
 			for(int s = 0; s < NSubstances; s++)
-	substances(i,j,s) = 0;
+				substances(i,j,s) = 0;
 }
 
 void Mir::populateOrgs()
@@ -349,11 +375,11 @@ void Mir::populateOrgs()
 	orgsVector.reserve(orgStartCount);
 	delete(adam);
 	adam = new Org(this);
-	if(bPhyloLog) 
+	if(bSoulLog)
 	{
 		adam->soul->name = "adam";
 		adam->soul->alive = true; // not to be killed
-	}	
+	}
 	for(int i = 0; i < orgStartCount; i++)
 	{
 		int x = rand()%w;
@@ -368,12 +394,10 @@ void Mir::populateOrgs()
 		for(int g = 0; g < initialOrgGenes; g++)
 		{
 			newbie->genome[g].seq = randomSeq(initialGeneLength);
-			//cout << newbie->genome[g].seq << endl;
-			//newbie->genome[g].seq = goldSeqs(0,1);
 			determineEnzyme(newbie->genome[g]);
 		}
 		newbie->SNPrate = initialSNPrate;
-		if(bPhyloLog) 
+		if(bSoulLog)
 		{
 			newbie->soul->parent = adam->soul;
 			adam->soul->children.push_back(newbie->soul);
@@ -391,7 +415,7 @@ void Mir::createRandomSource(SubstanceSource& source)
 	source.y = rand()%h;
 	int deltaRadius = maxSourceRadius - minSourceRadius;
 	if(deltaRadius > 0) source.radius = rand()%deltaRadius + minSourceRadius;
-        else source.radius = maxSourceRadius;
+	else source.radius = maxSourceRadius;
 	source.substanceId = goodSubstances[ rand()%goods ];
 	source.intensity = rand()%sourceMaxIntensity;
 	source.age = 0;
@@ -411,12 +435,13 @@ void Mir::populateSources()
 void Mir::populate_dE()
 {
 	for(int i = 0; i < NSubstances; i++)
-		for(int j = 0; j <= i; j++){
+		for(int j = 0; j <= i; j++)
+		{
 			if(i == j)
-	 dE(i,j) = 0;
+				dE(i,j) = 0;
 			else
-	dE(i,j) = (rand()%(100*(int)(maxSubstance_dE - minSubstance_dE)))/100.0 + minSubstance_dE;
-	dE(j,i) = -dE(i,j);
+				dE(i,j) = (rand()%(100*(int)(maxSubstance_dE - minSubstance_dE)))/100.0 + minSubstance_dE;
+			dE(j,i) = -dE(i,j);
 		}
 	reportDEMatrix();
 	goodSubstances.clear();
@@ -439,13 +464,14 @@ string Mir::randomSeq(int length)
 void Mir::populateGoldSeqs()
 {
 	for(int i = 0; i < NSubstances; i++)
-		for(int j = 0; j < NSubstances; j++){
+		for(int j = 0; j < NSubstances; j++)
+		{
 			if(i == j) continue;
-            goldSeqs(i,j) = randomSeq(initialGeneLength);
+			goldSeqs(i,j) = randomSeq(initialGeneLength);
 		}
 }
 
-float stringDist(string a, string b)
+float stringDist(string a, string b, bool synOn = true)
 {
 	int sizeDiff = a.size() - b.size();
 	int minSize = min(a.size(), b.size());
@@ -453,7 +479,7 @@ float stringDist(string a, string b)
 	int count = 0;
 	for(int i = 0; i < minSize; i++)
 	{
-		if(i%3 == 0) continue; // synonymus position
+		if(synOn && i%3 == 0) continue; // synonymus position
 		if(a[i] == b[i]) matched++;
 		count++;
 	}
@@ -468,8 +494,19 @@ void Mir::determineEnzyme(Gene& gene)
 		{
 			if(i == j) continue;
 			float dist = stringDist(gene.seq, goldSeqs(i,j));
-			if(dist == 0) { gene.in = i; gene.out = j; gene.fit = 1; return; }
-			if(dist < minDist){ minDist = dist; gene.in = i; gene.out = j; }
+			if(dist == 0)
+			{
+				gene.in = i;
+				gene.out = j;
+				gene.fit = 1;
+				return;
+			}
+			if(dist < minDist)
+			{
+				minDist = dist;
+				gene.in = i;
+				gene.out = j;
+			}
 		}
 	gene.fit = max(1-minDist, 0.0f);
 }
@@ -481,22 +518,23 @@ void Mir::sourcesEmmit()
 	for(int s = 0; s < sources.size(); s++)
 	{
 		SubstanceSource source = sources[s];
-        // 2bd: add check 4 maximun subst value
-        //if(substances(source.x, source.y, source.substanceId) >= maxSubstance)
+		// 2bd: add check 4 maximun subst value
+		//if(substances(source.x, source.y, source.substanceId) >= maxSubstance)
 		//	substances(source.x, source.y, source.substanceId) = maxSubstance;
-        int radius = source.radius;
-        if(radius == 0) substances(source.x, source.y, source.substanceId) += source.intensity;
-        else
-        {
-            for(int dx = -radius; dx < radius; dx++)
-                for(int dy = -radius; dy < radius; dy++)
-                {
-                   int X, Y;
-                   X = source.x + dx; Y = source.y + dy;
-                   putToWorld(X, Y);
-                   substances(X, Y, source.substanceId) += source.intensity;
-                }
-        }
+		int radius = source.radius;
+		if(radius == 0) substances(source.x, source.y, source.substanceId) += source.intensity;
+		else
+		{
+			for(int dx = -radius; dx < radius; dx++)
+				for(int dy = -radius; dy < radius; dy++)
+				{
+					int X, Y;
+					X = source.x + dx;
+					Y = source.y + dy;
+					putToWorld(X, Y);
+					substances(X, Y, source.substanceId) += source.intensity;
+				}
+		}
 		sources[s].age++;
 	}
 }
@@ -514,7 +552,8 @@ void Mir::sourceReincarnate()
 }
 
 void Mir::diffuse()
-{ // substanceDegradeDegrade
+{
+	// substanceDegradeDegrade
 	lite::array<float[1]> neighbourSum(NSubstances);
 	for(int i = 0; i < w; i++)
 		for(int j = 0; j < h; j++)
@@ -522,14 +561,15 @@ void Mir::diffuse()
 			int count = 0, I, J;
 			neighbourSum = 0;
 			for(int d_x = -1; d_x <= 1; d_x++)
-                for(int d_y = -1; d_y <= 1; d_y++)
-                {
-                    if(d_x == 0 && d_y == 0) continue;
-                    I = i + d_x; J = j + d_y;
-                    putToWorld(I, J);
-                    neighbourSum = neighbourSum + substances[row(I)][row(J)];
-                    count++;
-                }
+				for(int d_y = -1; d_y <= 1; d_y++)
+				{
+					if(d_x == 0 && d_y == 0) continue;
+					I = i + d_x;
+					J = j + d_y;
+					putToWorld(I, J);
+					neighbourSum = neighbourSum + substances[row(I)][row(J)];
+					count++;
+				}
 			neighbourSum /= count;
 			substances[row(i)][row(j)] = (1 - diffusion)*substances[row(i)][row(j)] + neighbourSum*diffusion;
 			substances[row(i)][row(j)] *= substanceDegrade;
@@ -568,7 +608,7 @@ void Mir::orgDie()
 			orgs(org->x, org->y) = NULL;
 			deadGenomes(org->x, org->y) = org->genome;
 			orgsVector.erase(orgsVector.begin() + o);
-			if(bPhyloLog) org->soul->die();
+			if(bSoulLog) org->soul->die();
 			delete org;
 		}
 		else o--;
@@ -586,22 +626,23 @@ void Mir::orgDivide()
 	{
 		Org* org = orgsVector[o];
 		if(org->energy > energyDivide && org->age > minAgeToDivide)
- 		{
+		{
 			// place
 			places.clear();
 			places.reserve(8);
 			int x = org->x, y = org->y, X, Y;
 			for(int d_x = -1; d_x <= 1; d_x++)
 			{
-                for(int d_y = -1; d_y <= 1; d_y++)
-                {
-                    if(d_x == 0 && d_y == 0) continue;
-                    X = x + d_x; Y = y + d_y;
-                    putToWorld(X, Y);
-                    lite::array<int[2]> tmp(X,Y);
-                    if(orgs(X,Y) == NULL)
-                        places.push_back(tmp);
-                }
+				for(int d_y = -1; d_y <= 1; d_y++)
+				{
+					if(d_x == 0 && d_y == 0) continue;
+					X = x + d_x;
+					Y = y + d_y;
+					putToWorld(X, Y);
+					lite::array<int[2]> tmp(X,Y);
+					if(orgs(X,Y) == NULL)
+						places.push_back(tmp);
+				}
 			}
 			if(places.size() == 0) continue;
 			lite::array<int[2]> place = places[rand()%places.size()];
@@ -612,12 +653,12 @@ void Mir::orgDivide()
 			// enzymes
 			for(int g = 0; g < newbie->genome.size(); g++)
 			{
-                determineEnzyme(newbie->genome[g]);
+				determineEnzyme(newbie->genome[g]);
 			}
 			orgs(newbie->x,newbie->y) = newbie;
 			orgsVector.push_back(newbie);
 			//if(divideLogOn) fprintf(divideLog, "%d -> %d;\n%d -> %d;\n", org->id, newbie->id, org->id, orgNewId);
-	    }
+		}
 	}
 }
 
@@ -640,7 +681,7 @@ void Mir::putToWorld(int &x, int &y)
 
 float Mir::meanEnzymeFit()
 {
-    if(orgsVector.size() == 0) return 0;
+	if(orgsVector.size() == 0) return 0;
 	float meanFit = 0;
 	int count = 0;
 	for(int o = 0; o < orgsVector.size(); o++)
@@ -656,7 +697,7 @@ float Mir::meanEnzymeFit()
 
 void Mir::saveGenomes()
 {
-    char fname[256];
+	char fname[256];
 	sprintf(fname, "MirAge_%d.fasta", age);
 	FILE* fw = fopen(fname, "w");
 
@@ -679,7 +720,7 @@ void Mir::giveNames(Soul* soul)
 	{
 		std::stringstream ss;
 		ss << soul->name  << "_" << i;
-		soul->children[i]->name = ss.str();	
+		soul->children[i]->name = ss.str();
 		giveNames(soul->children[i]);
 	}
 }
@@ -705,8 +746,9 @@ void Mir::calcTaylorMeanVariance(float& mean, float& var)
 	float m =  sum / n.size();
 	mean = m;
 	float accum = 0.0;
-	std::for_each (std::begin(n), std::end(n), [&](const float d) {
-	    accum += (d - m) * (d - m);
+	std::for_each (std::begin(n), std::end(n), [&](const float d)
+	{
+		accum += (d - m) * (d - m);
 	});
 	var = sqrt(accum / (n.size()-1));
 }
@@ -724,30 +766,28 @@ bool Mir::badSubstance(int id)
 
 void Mir::openLogFiles()
 {
-	// 4 future maybe close-open logs from time to time 4 monitoring
-	//necroLog = fopen("necroLog", "w");
-	//divideLog = fopen("divideLog.dot", "w");
 	populationLog = fopen(popLogFile, "w");
-	if(!populationLog) { cout << "problem creating logs... :(\n"; return; }
-	//fprintf(necroLog, "id\tage\tfit\n");
-	//fprintf(divideLog, "id\tfit1\tfit2\tage\tenergy\n");
-	//fprintf(divideLog, "graph History {\n");
+	geneDistLog = fopen("geneDist.txt","w");
+	if(!populationLog)
+	{
+		cout << "problem creating log file... :(\n";
+		return;
+	}
 	fprintf(populationLog, "id\torgs\tmeanFit\tmedianFit\tmaxFit\n");
 }
 
 void Mir::closeLogFiles()
 {
-	//fclose(necroLog);
-	//fprintf(divideLog, "}\n");
-	//fclose(divideLog);
 	fclose(populationLog);
+	fclose(geneDistLog);
 }
 
 void Mir::logPopulation()
 {
 	if((age % LOG_FREQ) != 0 || orgsVector.size() == 0) return;
 	float meanFit = 0;
-	vector<float> fits; fits.resize(orgsVector.size());
+	vector<float> fits;
+	fits.resize(orgsVector.size());
 	for(int o = 0; o < orgsVector.size(); o++)
 	{
 		meanFit += orgsVector[o]->meanFit();
@@ -760,4 +800,9 @@ void Mir::logPopulation()
 	fprintf(populationLog, "%d\t%d\t%f\t%f\t%f\n", id, (int)orgsVector.size(), meanFit, medianFit, fits[orgsVector.size()-1]);
 	fflush(populationLog);
 	if (bSaveGenomes) saveGenomes();
+}
+
+void Mir::logGeneDist()
+{
+	if((age % LOG_GENEDIST_FREQ) != 0 || orgsVector.size() == 0) return;
 }
