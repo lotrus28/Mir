@@ -1,6 +1,6 @@
-width 150
+width 550
 sources 4
-geneLength 50
+geneLength 500
 orgs 2000 
 min_dE -10
 max_dE 10
@@ -9,7 +9,7 @@ energyToDivide 640
 diffusion 0.1
 substanceDegrade 0.999
 expressionCost 0.1
-SNPrate 0.1
+SNPrate 0.01
 SourceLifetime 25000
 sourceMaxIntensity 10
 maxAge 3000

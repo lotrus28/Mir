@@ -129,6 +129,7 @@ private:
 	void orgDivide();
 	void sourceReincarnate();
 	void logPopulation();
+	void logGeneDist();
 
 	// helpers
 	void putToWorld(int &x, int &y);
@@ -183,11 +184,15 @@ private: // at the beginning
 	int initialGeneLength;
 	float initialSNPrate;
 private: // Logs and files
-	FILE *populationLog, *geneDistLog;
+	FILE *populationLog;
 	char *paramFile, *popLogFile, *constFile;
 	bool bSaveGenomes;
 public:
 	bool bSoulLog;
+private: // geneDistLog
+	FILE *geneDistLog;
+	lite::array<string[1]> refSeqs;
+
 };
 
 #endif // MIR_H

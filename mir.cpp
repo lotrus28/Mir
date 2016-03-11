@@ -13,7 +13,7 @@ using namespace lite;
 
 // consts
 int LOG_FREQ = 1000;
-int LOG_GENEDIST_FREQ = 100;
+int LOG_GENEDIST_FREQ = 1000;
 float Mir::maxSubstance = 1000;
 float Org::maxEAT = 0.6;
 float Org::maxEnergy = 1000;
@@ -203,6 +203,10 @@ void Mir::init()
 	nullPole();
 	populateOrgs();
 	openLogFiles();
+	// geneDistLog -- ExPerImeNTal
+	refSeqs.resize(2);
+	refSeqs(0) = goldSeqs(0,1); 
+	refSeqs(1) = goldSeqs(1,0);
 }
 
 void Mir::loadConfig()
@@ -301,6 +305,7 @@ void Mir::tic()
 		populateOrgs();
 	}
 	logPopulation();
+	logGeneDist();
 	age++;
 }
 
@@ -802,7 +807,21 @@ void Mir::logPopulation()
 	if (bSaveGenomes) saveGenomes();
 }
 
+
+
 void Mir::logGeneDist()
 {
+	// experimental for 1 gene, 2 substances only!
 	if((age % LOG_GENEDIST_FREQ) != 0 || orgsVector.size() == 0) return;
+	for(int o = 0; o < orgsVector.size(); o++)
+        {
+                Org* org = orgsVector[o];
+		float d1 = stringDist(refSeqs[0], org->genome[0].seq);
+		float d2 = stringDist(refSeqs[1], org->genome[0].seq);
+		fprintf(geneDistLog, "%d\t%f\t%f\n", age, d1, d2);
+	}
 }
+
+
+
+
