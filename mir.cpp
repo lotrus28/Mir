@@ -8,6 +8,7 @@
 #include <random>
 #include <sstream>
 #include <chrono>
+#include <map>
 
 using namespace lite;
 
@@ -305,6 +306,7 @@ void Mir::tic()
 		populateOrgs();
 	}
 	logPopulation();
+	logStrains();
 	logGeneDist();
 	age++;
 }
@@ -812,7 +814,26 @@ void Mir::logPopulation()
 
 
 void Mir::logStrains()
-	fprintf(strainLog, "qu %d", 2);
+{
+	if((age % LOG_FREQ) != 0 || orgsVector.size() == 0) return;
+	fprintf(strainLog, "%d\t%d\t%d", id, age, (int)orgsVector.size());
+	std::map< std::pair < int, int >, int> map;
+	std::pair <int, int> p;
+	
+	for(int o = 0; o < orgsVector.size(); o++)
+        {
+                Org* org = orgsVector[o];
+		string s;
+		p.first = org->genome[0].in;
+		p.second = org->genome[0].out;
+		map[p] = map[p] + 1;
+		//fprintf(strainLog, "%d_%d\t", org->genome[0].in, org->genome[0].out);
+
+	}
+	for (auto& x: map) {
+		fprintf(strainLog, "\t%d_%d:%d", x.first.first, x.first.second, x.second);
+	}
+	fprintf(strainLog, "\n");
 	fflush(strainLog);
 }
 
