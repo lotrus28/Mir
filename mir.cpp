@@ -772,6 +772,8 @@ bool Mir::badSubstance(int id)
 void Mir::openLogFiles()
 {
 	populationLog = fopen(popLogFile, "w");
+	strainLog = fopen("strainLog.txt", "w");
+	
 	geneDistLog = fopen("geneDist.txt","w");
 	if(!populationLog)
 	{
@@ -784,6 +786,7 @@ void Mir::openLogFiles()
 void Mir::closeLogFiles()
 {
 	fclose(populationLog);
+	fclose(strainLog);
 	fclose(geneDistLog);
 }
 
@@ -808,6 +811,10 @@ void Mir::logPopulation()
 }
 
 
+void Mir::logStrains()
+	fprintf(strainLog, "qu %d", 2);
+	fflush(strainLog);
+}
 
 void Mir::logGeneDist()
 {

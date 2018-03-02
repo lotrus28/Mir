@@ -129,6 +129,7 @@ private:
 	void orgDivide();
 	void sourceReincarnate();
 	void logPopulation();
+	void logStrains();
 	void logGeneDist();
 
 	// helpers
@@ -185,6 +186,7 @@ private: // at the beginning
 	float initialSNPrate;
 private: // Logs and files
 	FILE *populationLog;
+	FILE *strainLog;
 	char *paramFile, *popLogFile, *constFile;
 	bool bSaveGenomes;
 public:
