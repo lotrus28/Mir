@@ -441,15 +441,14 @@ void Mir::populateSources()
 
 void Mir::populate_dE()
 {
+	ifstream f("dematrix.txt");
 	for(int i = 0; i < NSubstances; i++)
-		for(int j = 0; j <= i; j++)
+	{
+		for(int j = 0; j < NSubstances; j++)
 		{
-			if(i == j)
-				dE(i,j) = 0;
-			else
-				dE(i,j) = (rand()%(100*(int)(maxSubstance_dE - minSubstance_dE)))/100.0 + minSubstance_dE;
-			dE(j,i) = -dE(i,j);
+				f >> dE(i,j);	
 		}
+	}
 	reportDEMatrix();
 	goodSubstances.clear();
 	for(int i =0 ; i < NSubstances; i++)
@@ -837,8 +836,8 @@ void Mir::logStrains()
 	{
 		for(int j = 0; j < NSubstances; j++)
 		{
-			p = make_pair(i, j);
-			
+			if(i == j) { break; }
+			p = make_pair(i, j);	
 			fprintf(strainLog, "\t%d_%d:%d", i, j, map[p]);
 		} 
 	}
