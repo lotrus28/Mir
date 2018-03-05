@@ -13,7 +13,7 @@
 using namespace lite;
 
 // consts
-int LOG_FREQ = 1000;
+int LOG_FREQ = 100;
 int LOG_GENEDIST_FREQ = 1000;
 float Mir::maxSubstance = 1000;
 float Org::maxEAT = 0.6;

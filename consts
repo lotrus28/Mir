@@ -1,5 +1,6 @@
 MirLifetime 10001
+LogFreq 10
 SoulLog 0
 saveGenomes 0
 genes 1
-substances 2
+substances 4
