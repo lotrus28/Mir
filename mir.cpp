@@ -836,7 +836,7 @@ void Mir::logStrains()
 	{
 		for(int j = 0; j < NSubstances; j++)
 		{
-			if(i == j) { break; }
+			if(i == j) { continue; }
 			p = make_pair(i, j);	
 			fprintf(strainLog, "\t%d_%d:%d", i, j, map[p]);
 		} 
