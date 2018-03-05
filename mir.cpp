@@ -830,8 +830,17 @@ void Mir::logStrains()
 		//fprintf(strainLog, "%d_%d\t", org->genome[0].in, org->genome[0].out);
 
 	}
-	for (auto& x: map) {
-		fprintf(strainLog, "\t%d_%d:%d", x.first.first, x.first.second, x.second);
+//	for (auto& x: map) {
+//		fprintf(strainLog, "\t%d_%d:%d", x.first.first, x.first.second, x.second);
+//	}
+	for(int i = 0; i < NSubstances; i++)
+	{
+		for(int j = 0; j < NSubstances; j++)
+		{
+			p = make_pair(i, j);
+			
+			fprintf(strainLog, "\t%d_%d:%d", i, j, map[p]);
+		} 
 	}
 	fprintf(strainLog, "\n");
 	fflush(strainLog);
